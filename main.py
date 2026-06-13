@@ -227,7 +227,7 @@ Respond ONLY with valid JSON in this exact format:
 {{
   "overall_verdict": "AFFECTED" or "NOT AFFECTED",
   "vulnerable_config_line": "exact line from config or null",
-  "reason": "plain English explanation",
+  "reason": "plain English explanation (2-3 sentences max)",
   "remediation": "exact CLI command(s) to run on the device",
   "patch_type": "config_change" or "ios_upgrade" or "none"
 }}"""
@@ -238,7 +238,7 @@ Respond ONLY with valid JSON in this exact format:
         model = GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(
             prompt,
-            generation_config=GenerationConfig(max_output_tokens=1500)
+            generation_config=GenerationConfig(max_output_tokens=4096)
         )
         raw_text = response.text.strip()
         logger.info(f"Gemini raw response (analyze): {raw_text!r}")
