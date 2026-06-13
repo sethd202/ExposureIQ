@@ -9,7 +9,8 @@ from datetime import datetime, timedelta, timezone
 import requests
 from flask import Flask, render_template, request, jsonify, make_response
 from google.cloud import storage, firestore
-import google.generativeai as genai
+import vertexai
+from vertexai.generative_models import GenerativeModel, GenerationConfig
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key")
@@ -19,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 GCP_PROJECT = os.environ.get("GCP_PROJECT", "")
 GCS_BUCKET = os.environ.get("GCS_BUCKET", "exposureiq-configs")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+
+vertexai.init(project=GCP_PROJECT, location="us-central1")
 
 _kev_cache = None
 
@@ -233,14 +235,12 @@ Respond ONLY with valid JSON in this exact format:
     # Step 7 — Call Gemini
     gemini_result = {}
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = GenerativeModel("gemini-2.0-flash")
         response = model.generate_content(
             prompt,
-            generation_config=genai.types.GenerationConfig(max_output_tokens=1500)
+            generation_config=GenerationConfig(max_output_tokens=1500)
         )
         raw_text = response.text.strip()
-        # Strip markdown code fences if present
         raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text)
         raw_text = re.sub(r"\s*```$", "", raw_text)
         gemini_result = json.loads(raw_text)
@@ -328,8 +328,7 @@ Respond in plain language. For remediation plans, rank by:
 Provide exact Cisco CLI commands where relevant."""
 
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = GenerativeModel("gemini-2.0-flash")
         response = model.generate_content(prompt)
         answer = response.text.strip()
     except Exception as e:
