@@ -234,7 +234,7 @@ Respond ONLY with valid JSON in this exact format:
     gemini_result = {}
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-1.5-pro")
+        model = genai.GenerativeModel("gemini-1.5-pro-latest")
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(max_output_tokens=1500)
@@ -329,7 +329,7 @@ Provide exact Cisco CLI commands where relevant."""
 
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-1.5-pro")
+        model = genai.GenerativeModel("gemini-1.5-pro-latest")
         response = model.generate_content(prompt)
         answer = response.text.strip()
     except Exception as e:
