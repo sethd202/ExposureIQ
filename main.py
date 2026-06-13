@@ -241,8 +241,13 @@ Respond ONLY with valid JSON in this exact format:
             generation_config=GenerationConfig(max_output_tokens=1500)
         )
         raw_text = response.text.strip()
-        raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text)
-        raw_text = re.sub(r"\s*```$", "", raw_text)
+        logger.info(f"Gemini raw response (analyze): {raw_text!r}")
+        fence = re.search(r"```(?:json)?\s*\n([\s\S]*?)\n\s*```", raw_text)
+        if fence:
+            raw_text = fence.group(1).strip()
+        else:
+            raw_text = re.sub(r"^```(?:json)?\s*\n?", "", raw_text)
+            raw_text = re.sub(r"\n?```\s*$", "", raw_text).strip()
         gemini_result = json.loads(raw_text)
     except Exception as e:
         logger.error(f"Gemini call failed: {e}")
@@ -331,6 +336,7 @@ Provide exact Cisco CLI commands where relevant."""
         model = GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(prompt)
         answer = response.text.strip()
+        logger.info(f"Gemini raw response (query): {answer!r}")
     except Exception as e:
         logger.error(f"Gemini query failed: {e}")
         answer = f"Query failed: {str(e)}"
