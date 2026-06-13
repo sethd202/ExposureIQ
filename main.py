@@ -235,7 +235,7 @@ Respond ONLY with valid JSON in this exact format:
     # Step 7 — Call Gemini
     gemini_result = {}
     try:
-        model = GenerativeModel("gemini-2.0-flash")
+        model = GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(
             prompt,
             generation_config=GenerationConfig(max_output_tokens=1500)
@@ -328,7 +328,7 @@ Respond in plain language. For remediation plans, rank by:
 Provide exact Cisco CLI commands where relevant."""
 
     try:
-        model = GenerativeModel("gemini-2.0-flash")
+        model = GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(prompt)
         answer = response.text.strip()
     except Exception as e:
