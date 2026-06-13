@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExposureIQ — CVE Impact Analyzer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0e14;
+    color: #e8eaf0;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    border-bottom: 0.5px solid #1e2d3d;
+    background: #0d1117;
+  }
+
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .wordmark {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .wordmark-line1 {
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+  }
+
+  .wordmark-exposure {
+    font-family: Arial, sans-serif;
+    font-size: 17px;
+    font-weight: 500;
+    color: #e8eaf0;
+  }
+
+  .wordmark-iq {
+    font-family: Georgia, serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: #34d399;
+  }
+
+  .wordmark-sub {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: #22d3ee;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .header-item {
+    padding: 0 16px;
+    border-right: 0.5px solid #1e2d3d;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #22d3ee;
+  }
+
+  .header-item:last-child { border-right: none; }
+
+  .model-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #4a5568;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4a5568;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .dot.green { background: #34d399; }
+  .dot.red   { background: #e24b4a; }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #34d399;
+  }
+
+  .status-indicator.degraded { color: #e24b4a; }
+
+  /* ── Main content ── */
+  main {
+    flex: 1;
+    padding: 28px;
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── Panels ── */
+  .panel {
+    background: #0d1117;
+    border: 0.5px solid #1e2d3d;
+    border-radius: 4px;
+    padding: 20px;
+  }
+
+  .section-label {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: #4a5568;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    border: 1.5px dashed #1e2d3d;
+    border-radius: 4px;
+    padding: 36px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: #34d399;
+  }
+
+  .upload-zone input[type="file"] {
+    display: none;
+  }
+
+  .upload-icon {
+    font-size: 28px;
+    color: #4a5568;
+    margin-bottom: 10px;
+  }
+
+  .upload-label {
+    font-size: 13px;
+    color: #7a8899;
+  }
+
+  .upload-sublabel {
+    font-size: 11px;
+    color: #4a5568;
+    margin-top: 4px;
+  }
+
+  /* ── Device summary ── */
+  .device-summary {
+    background: #060a0f;
+    border: 0.5px solid #34d399;
+    border-radius: 4px;
+    padding: 16px;
+    margin-top: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    display: none;
+  }
+
+  .device-summary.visible { display: block; }
+
+  .device-summary-row {
+    display: flex;
+    gap: 8px;
+    padding: 3px 0;
+    border-bottom: 0.5px solid #1e2d3d;
+  }
+
+  .device-summary-row:last-child { border-bottom: none; }
+
+  .ds-key { color: #4a5568; width: 160px; flex-shrink: 0; }
+  .ds-val { color: #34d399; }
+
+  .upload-spinner {
+    display: none;
+    margin-top: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #ef9f27;
+  }
+
+  .upload-spinner.visible { display: block; }
+
+  /* ── CVE input section ── */
+  .cve-section {
+    margin-top: 20px;
+  }
+
+  .amber-warning {
+    background: rgba(239, 159, 39, 0.08);
+    border: 0.5px solid #ef9f27;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #ef9f27;
+    margin-bottom: 12px;
+  }
+
+  .cve-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .cve-input {
+    flex: 1;
+    background: #060a0f;
+    border: 0.5px solid #1e2d3d;
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #e8eaf0;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .cve-input:focus { border-color: #34d399; }
+  .cve-input:disabled { color: #4a5568; cursor: not-allowed; }
+
+  .analyze-btn {
+    background: #064e3b;
+    border: 0.5px solid #34d399;
+    border-radius: 4px;
+    padding: 10px 20px;
+    color: #34d399;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+
+  .analyze-btn:hover:not(:disabled) { background: #065f46; }
+  .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── LLM processing panel ── */
+  .llm-panel {
+    display: none;
+    background: #060a0f;
+    border: 0.5px solid #1e2d3d;
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-top: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+  }
+
+  .llm-panel.visible { display: block; }
+
+  .llm-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    color: #4a5568;
+  }
+
+  .llm-step.active { color: #ef9f27; }
+  .llm-step.done   { color: #34d399; }
+
+  .step-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2d3f52;
+    flex-shrink: 0;
+  }
+
+  .llm-step.active .step-dot { background: #ef9f27; animation: pulse 0.8s ease-in-out infinite; }
+  .llm-step.done  .step-dot  { background: #34d399; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── Results table ── */
+  .results-table-wrap {
+    display: none;
+    margin-top: 16px;
+    overflow-x: auto;
+  }
+
+  .results-table-wrap.visible { display: block; }
+
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+  }
+
+  .results-table th {
+    text-align: left;
+    padding: 8px 12px;
+    color: #4a5568;
+    border-bottom: 0.5px solid #1e2d3d;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .results-table td {
+    padding: 9px 12px;
+    border-bottom: 0.5px solid #1e2d3d;
+    color: #7a8899;
+  }
+
+  .results-table tr.affected {
+    border-left: 2px solid #e24b4a;
+  }
+
+  .results-table tr.not-affected {
+    border-left: 2px solid #34d399;
+  }
+
+  .verdict-affected    { color: #e24b4a; font-weight: 700; }
+  .verdict-not-affected { color: #34d399; font-weight: 700; }
+
+  /* ── Analysis output ── */
+  .analysis-output {
+    display: none;
+    background: #060a0f;
+    border: 0.5px solid #1e2d3d;
+    border-radius: 4px;
+    padding: 16px;
+    margin-top: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+  }
+
+  .analysis-output.visible { display: block; }
+
+  .analysis-verdict-line {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .analysis-block {
+    padding: 8px 12px;
+    border-radius: 3px;
+    margin-top: 10px;
+  }
+
+  .vuln-line-block {
+    border-left: 3px solid #ef9f27;
+    background: rgba(239, 159, 39, 0.06);
+    color: #ef9f27;
+  }
+
+  .fix-block {
+    border-left: 3px solid #34d399;
+    background: rgba(52, 211, 153, 0.06);
+    color: #34d399;
+  }
+
+  .analysis-label {
+    color: #4a5568;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+
+  /* ── Section 03 — Query panel ── */
+  #section-03 { display: none; }
+  #section-03.visible { display: block; }
+
+  .preset-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .preset-btn {
+    background: transparent;
+    border: 0.5px solid #34d399;
+    border-radius: 4px;
+    padding: 7px 14px;
+    color: #34d399;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .preset-btn:hover { background: rgba(52, 211, 153, 0.08); }
+
+  .query-input-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .query-input {
+    flex: 1;
+    background: #060a0f;
+    border: 0.5px solid #22d3ee;
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #e8eaf0;
+    outline: none;
+  }
+
+  .query-input:focus { border-color: #34d399; }
+
+  .ask-btn {
+    background: transparent;
+    border: 0.5px solid #34d399;
+    border-radius: 4px;
+    padding: 10px 18px;
+    color: #34d399;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .ask-btn:hover { background: rgba(52, 211, 153, 0.08); }
+
+  .query-response {
+    display: none;
+    background: #060a0f;
+    border-left: 2px solid #34d399;
+    border-radius: 0 4px 4px 0;
+    border-top: 0.5px solid #1e2d3d;
+    border-right: 0.5px solid #1e2d3d;
+    border-bottom: 0.5px solid #1e2d3d;
+    padding: 16px;
+    margin-top: 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #e8eaf0;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  .query-response.visible { display: block; }
+
+  .response-header {
+    font-size: 10px;
+    color: #4a5568;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 0.5px solid #1e2d3d;
+  }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 0.5px solid #1e2d3d;
+    padding: 10px 28px;
+    background: #0d1117;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-text {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: #2d3f52;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo-area">
+    <svg viewBox="0 0 38 42" width="36" height="40">
+      <path d="M19 2 L35 9 L35 24 C35 33 19 40 19 40 C19 40 3 33 3 24 L3 9 Z"
+            fill="none" stroke="#34d399" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M19 8 L30 13 L30 24 C30 30 19 35 19 35 C19 35 8 30 8 24 L8 13 Z"
+            fill="none" stroke="#34d399" stroke-width="0.5" opacity="0.35" stroke-linejoin="round"/>
+      <text x="19" y="26" text-anchor="middle" font-size="12" font-weight="700"
+            font-family="Georgia,serif" fill="#34d399">IQ</text>
+    </svg>
+    <div class="wordmark">
+      <div class="wordmark-line1">
+        <span class="wordmark-exposure">Exposure</span><span class="wordmark-iq">IQ</span>
+      </div>
+      <div class="wordmark-sub">CVE IMPACT ANALYZER</div>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <div class="header-item">Know your exposure. Before it knows you.</div>
+    <div class="header-item model-indicator">
+      <span class="dot"></span>gemini-1.5-pro
+    </div>
+    <div class="header-item" style="border-right:none; padding-right:0;">
+      <div class="status-indicator" id="statusIndicator" onclick="checkHealth()">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Checking...</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── Main ── -->
+<main>
+
+  <!-- Section 01 — Device Config Upload -->
+  <div class="panel">
+    <div class="section-label">01 — DEVICE CONFIG</div>
+
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
+         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <input type="file" id="fileInput" accept=".txt,.cfg,.conf" onchange="handleFileSelect(event)">
+      <div class="upload-icon">&#8682;</div>
+      <div class="upload-label">Click to upload or drag & drop a Cisco config file</div>
+      <div class="upload-sublabel">.txt · .cfg · .conf</div>
+    </div>
+
+    <div class="upload-spinner" id="uploadSpinner">&#9679; Uploading to GCS · waiting for Cloud Function...</div>
+
+    <div class="device-summary" id="deviceSummary">
+      <div class="device-summary-row"><span class="ds-key">Hostname</span><span class="ds-val" id="ds-hostname">—</span></div>
+      <div class="device-summary-row"><span class="ds-key">Platform</span><span class="ds-val" id="ds-platform">—</span></div>
+      <div class="device-summary-row"><span class="ds-key">IOS Version</span><span class="ds-val" id="ds-version">—</span></div>
+      <div class="device-summary-row"><span class="ds-key">Role</span><span class="ds-val" id="ds-role">—</span></div>
+      <div class="device-summary-row"><span class="ds-key">Services Detected</span><span class="ds-val" id="ds-services">—</span></div>
+      <div class="device-summary-row"><span class="ds-key">GCS Path</span><span class="ds-val" id="ds-gcs">—</span></div>
+      <div class="device-summary-row"><span class="ds-key">Cloud Function</span><span class="ds-val" id="ds-cf">—</span></div>
+      <div class="device-summary-row"><span class="ds-key">Firestore</span><span class="ds-val" id="ds-fs">—</span></div>
+    </div>
+
+    <!-- Section 02 — CVE Analysis (embedded inside Section 01 panel) -->
+    <div class="cve-section">
+      <div style="height:16px;"></div>
+      <div class="section-label">02 — CVE ANALYSIS</div>
+
+      <div class="amber-warning" id="uploadWarning">
+        &#9888; Upload a device config above before analyzing a CVE.
+      </div>
+
+      <div class="cve-input-row">
+        <input type="text" class="cve-input" id="cveInput" placeholder="CVE-2023-20198"
+               disabled autocomplete="off" spellcheck="false">
+        <button class="analyze-btn" id="analyzeBtn" disabled onclick="runAnalysis()">ANALYZE &#8594;</button>
+      </div>
+
+      <div class="llm-panel" id="llmPanel">
+        <div class="llm-step" id="step-nvd"><span class="step-dot"></span>Fetching NVD CVE data...</div>
+        <div class="llm-step" id="step-kev"><span class="step-dot"></span>Checking CISA KEV catalog...</div>
+        <div class="llm-step" id="step-epss"><span class="step-dot"></span>Fetching EPSS score...</div>
+        <div class="llm-step" id="step-firestore"><span class="step-dot"></span>Reading Firestore device record...</div>
+        <div class="llm-step" id="step-gemini"><span class="step-dot"></span>Gemini analysis in progress...</div>
+        <div class="llm-step" id="step-save"><span class="step-dot"></span>Saving result to Firestore...</div>
+      </div>
+
+      <div class="results-table-wrap" id="resultsTableWrap">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>CVE ID</th>
+              <th>CVSS</th>
+              <th>EPSS</th>
+              <th>KEV</th>
+              <th>Verdict</th>
+            </tr>
+          </thead>
+          <tbody id="resultsTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="analysis-output" id="analysisOutput">
+        <div class="analysis-verdict-line" id="verdictLine"></div>
+        <div style="color:#7a8899; line-height:1.6; margin-bottom:8px;" id="reasonText"></div>
+        <div class="analysis-block vuln-line-block" id="vulnLineBlock" style="display:none;">
+          <div class="analysis-label">Vulnerable Config Line</div>
+          <div id="vulnLineText"></div>
+        </div>
+        <div class="analysis-block fix-block" id="fixBlock" style="display:none;">
+          <div class="analysis-label">Remediation</div>
+          <pre id="fixText" style="white-space:pre-wrap; margin:0;"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 03 — Ask Gemini -->
+  <div class="panel" id="section-03">
+    <div class="section-label">03 — ASK GEMINI</div>
+
+    <div class="preset-buttons">
+      <button class="preset-btn" onclick="sendPreset('patch priority')">patch priority &#8599;</button>
+      <button class="preset-btn" onclick="sendPreset('security posture')">security posture &#8599;</button>
+      <button class="preset-btn" onclick="sendPreset('manager report')">manager report &#8599;</button>
+    </div>
+
+    <div class="query-input-row">
+      <input type="text" class="query-input" id="queryInput"
+             placeholder="Ask about this device's security posture..." autocomplete="off">
+      <button class="ask-btn" onclick="sendQuery()">ask &#8594;</button>
+    </div>
+
+    <div class="query-response" id="queryResponse">
+      <div class="response-header">gemini-1.5-pro &nbsp;·&nbsp; Firestore session &nbsp;·&nbsp; no external APIs called</div>
+      <div id="queryResponseText"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Footer ── -->
+<footer>
+  <span class="footer-text">GCP: Cloud Run &nbsp;·&nbsp; Storage &nbsp;·&nbsp; Functions &nbsp;·&nbsp; Firestore &nbsp;·&nbsp; Secret Manager &nbsp;·&nbsp; Artifact Registry</span>
+  <span class="footer-text">session: <span id="sessionDisplay">—</span></span>
+</footer>
+
+<script>
+// ── State ──
+let configUploaded = false;
+let analysisCount = 0;
+
+// ── On load ──
+window.addEventListener('DOMContentLoaded', () => {
+  checkHealth();
+  // Try to get session ID from cookie for display
+  const sid = getCookie('session_id');
+  if (sid) document.getElementById('sessionDisplay').textContent = sid.substring(0, 8) + '...';
+});
+
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+
+// ── Health check ──
+async function checkHealth() {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  const ind = document.getElementById('statusIndicator');
+  try {
+    const resp = await fetch('/health');
+    if (resp.ok) {
+      dot.className = 'dot green';
+      txt.textContent = 'Operational';
+      ind.className = 'status-indicator';
+    } else {
+      throw new Error('non-200');
+    }
+  } catch {
+    dot.className = 'dot red';
+    txt.textContent = 'Degraded';
+    ind.className = 'status-indicator degraded';
+  }
+}
+
+// ── Drag & drop ──
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.add('dragover');
+}
+
+function onDragLeave(e) {
+  document.getElementById('uploadZone').classList.remove('dragover');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) uploadFile(file);
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) uploadFile(file);
+}
+
+// ── Upload ──
+async function uploadFile(file) {
+  const spinner = document.getElementById('uploadSpinner');
+  const summary = document.getElementById('deviceSummary');
+  spinner.classList.add('visible');
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  try {
+    const resp = await fetch('/upload', { method: 'POST', body: fd });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      spinner.classList.remove('visible');
+      alert('Upload failed: ' + (data.error || resp.status));
+      return;
+    }
+
+    spinner.classList.remove('visible');
+    document.getElementById('ds-hostname').textContent = data.hostname || '—';
+    document.getElementById('ds-platform').textContent = data.platform || '—';
+    document.getElementById('ds-version').textContent = data.ios_version || '—';
+    document.getElementById('ds-role').textContent = data.role || '—';
+    document.getElementById('ds-services').textContent = (data.services || []).join(', ') || '—';
+    document.getElementById('ds-gcs').textContent = data.gcs_path || '—';
+    document.getElementById('ds-cf').textContent = data.cloud_function_status || '—';
+    document.getElementById('ds-fs').textContent = data.firestore_status || '—';
+    summary.classList.add('visible');
+
+    // Enable CVE input
+    configUploaded = true;
+    document.getElementById('uploadWarning').style.display = 'none';
+    document.getElementById('cveInput').disabled = false;
+    document.getElementById('analyzeBtn').disabled = false;
+    const sid = getCookie('session_id');
+    if (sid) document.getElementById('sessionDisplay').textContent = sid.substring(0, 8) + '...';
+
+  } catch (err) {
+    spinner.classList.remove('visible');
+    alert('Upload error: ' + err.message);
+  }
+}
+
+// ── Analysis step animations ──
+const STEPS = ['step-nvd', 'step-kev', 'step-epss', 'step-firestore', 'step-gemini', 'step-save'];
+const STEP_DELAYS = [0, 600, 1200, 1800, 2500, 6000];
+
+function resetSteps() {
+  STEPS.forEach(id => {
+    const el = document.getElementById(id);
+    el.className = 'llm-step';
+  });
+}
+
+function animateSteps(resultPromise) {
+  resetSteps();
+  document.getElementById('llmPanel').classList.add('visible');
+
+  // Animate first 5 steps with delays
+  STEPS.slice(0, 5).forEach((id, i) => {
+    setTimeout(() => {
+      if (i > 0) {
+        document.getElementById(STEPS[i - 1]).className = 'llm-step done';
+      }
+      document.getElementById(id).className = 'llm-step active';
+    }, STEP_DELAYS[i]);
+  });
+
+  // When result arrives, mark all done
+  resultPromise.then(() => {
+    STEPS.slice(0, 5).forEach(id => {
+      document.getElementById(id).className = 'llm-step done';
+    });
+    const saveEl = document.getElementById('step-save');
+    saveEl.className = 'llm-step active';
+    setTimeout(() => { saveEl.className = 'llm-step done'; }, 500);
+  }).catch(() => {
+    STEPS.forEach(id => { document.getElementById(id).className = 'llm-step'; });
+  });
+}
+
+// ── CVE Analysis ──
+async function runAnalysis() {
+  const cveId = document.getElementById('cveInput').value.trim().toUpperCase();
+  if (!cveId) return;
+
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('analysisOutput').classList.remove('visible');
+
+  const fetchPromise = fetch('/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cve_id: cveId })
+  });
+
+  animateSteps(fetchPromise);
+
+  try {
+    const resp = await fetchPromise;
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      alert('Analysis failed: ' + (data.error || resp.status));
+      document.getElementById('analyzeBtn').disabled = false;
+      return;
+    }
+
+    // Show results table
+    addResultRow(data);
+    document.getElementById('resultsTableWrap').classList.add('visible');
+
+    // Show analysis output
+    showAnalysisOutput(data);
+
+    analysisCount++;
+    document.getElementById('section-03').classList.add('visible');
+
+  } catch (err) {
+    alert('Analysis error: ' + err.message);
+  }
+
+  document.getElementById('analyzeBtn').disabled = false;
+}
+
+function addResultRow(data) {
+  const tbody = document.getElementById('resultsTableBody');
+  const tr = document.createElement('tr');
+  const isAffected = data.overall_verdict === 'AFFECTED';
+  tr.className = isAffected ? 'affected' : 'not-affected';
+  tr.innerHTML = `
+    <td>${escHtml(data.cve_id)}</td>
+    <td>${data.cvss ?? '—'}</td>
+    <td>${data.epss != null ? (data.epss * 100).toFixed(1) + '%' : '—'}</td>
+    <td>${data.kev ? '<span style="color:#e24b4a">YES</span>' : 'NO'}</td>
+    <td><span class="${isAffected ? 'verdict-affected' : 'verdict-not-affected'}">${escHtml(data.overall_verdict)}</span></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function showAnalysisOutput(data) {
+  const out = document.getElementById('analysisOutput');
+  const isAffected = data.overall_verdict === 'AFFECTED';
+
+  const verdictEl = document.getElementById('verdictLine');
+  verdictEl.textContent = data.overall_verdict;
+  verdictEl.style.color = isAffected ? '#e24b4a' : '#34d399';
+
+  document.getElementById('reasonText').textContent = data.reason || '';
+
+  const vulnBlock = document.getElementById('vulnLineBlock');
+  if (data.vulnerable_config_line) {
+    document.getElementById('vulnLineText').textContent = data.vulnerable_config_line;
+    vulnBlock.style.display = 'block';
+  } else {
+    vulnBlock.style.display = 'none';
+  }
+
+  const fixBlock = document.getElementById('fixBlock');
+  if (data.remediation) {
+    document.getElementById('fixText').textContent = data.remediation;
+    fixBlock.style.display = 'block';
+  } else {
+    fixBlock.style.display = 'none';
+  }
+
+  out.classList.add('visible');
+}
+
+// ── Query ──
+function sendPreset(preset) {
+  document.getElementById('queryInput').value = preset;
+  sendQuery();
+}
+
+async function sendQuery() {
+  const question = document.getElementById('queryInput').value.trim();
+  if (!question) return;
+
+  const respEl = document.getElementById('queryResponse');
+  const respText = document.getElementById('queryResponseText');
+  respText.textContent = 'Thinking...';
+  respEl.classList.add('visible');
+
+  try {
+    const resp = await fetch('/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+    const data = await resp.json();
+    respText.textContent = data.answer || data.error || 'No response';
+  } catch (err) {
+    respText.textContent = 'Query error: ' + err.message;
+  }
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
