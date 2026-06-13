@@ -576,7 +576,7 @@
       <div class="cve-input-row">
         <input type="text" class="cve-input" id="cveInput" placeholder="CVE-2023-20198"
                disabled autocomplete="off" spellcheck="false">
-        <button class="analyze-btn" id="analyzeBtn" disabled onclick="runAnalysis()">ANALYZE &#8594;</button>
+        <button class="analyze-btn" id="analyzeBtn" disabled type="button">ANALYZE &#8594;</button>
       </div>
 
       <div class="llm-panel" id="llmPanel">
@@ -656,9 +656,13 @@ let analysisCount = 0;
 // ── On load ──
 window.addEventListener('DOMContentLoaded', () => {
   checkHealth();
-  // Try to get session ID from cookie for display
   const sid = getCookie('session_id');
   if (sid) document.getElementById('sessionDisplay').textContent = sid.substring(0, 8) + '...';
+
+  document.getElementById('analyzeBtn').addEventListener('click', runAnalysis);
+  document.getElementById('cveInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !document.getElementById('analyzeBtn').disabled) runAnalysis();
+  });
 });
 
 function getCookie(name) {
@@ -799,39 +803,34 @@ async function runAnalysis() {
   document.getElementById('analyzeBtn').disabled = true;
   document.getElementById('analysisOutput').classList.remove('visible');
 
-  const fetchPromise = fetch('/analyze', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cve_id: cveId })
-  });
-
-  animateSteps(fetchPromise);
-
   try {
+    const fetchPromise = fetch('/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cve_id: cveId })
+    });
+
+    animateSteps(fetchPromise);
+
     const resp = await fetchPromise;
     const data = await resp.json();
 
     if (!resp.ok) {
       alert('Analysis failed: ' + (data.error || resp.status));
-      document.getElementById('analyzeBtn').disabled = false;
       return;
     }
 
-    // Show results table
     addResultRow(data);
     document.getElementById('resultsTableWrap').classList.add('visible');
-
-    // Show analysis output
     showAnalysisOutput(data);
-
     analysisCount++;
     document.getElementById('section-03').classList.add('visible');
 
   } catch (err) {
     alert('Analysis error: ' + err.message);
+  } finally {
+    document.getElementById('analyzeBtn').disabled = false;
   }
-
-  document.getElementById('analyzeBtn').disabled = false;
 }
 
 function addResultRow(data) {
