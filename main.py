@@ -13,7 +13,7 @@ import vertexai
 from vertexai.generative_models import GenerativeModel, GenerationConfig
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key")
+app.secret_key = os.environ["FLASK_SECRET_KEY"]
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
