@@ -25,6 +25,36 @@ vertexai.init(project=GCP_PROJECT, location="us-central1")
 
 _kev_cache = None
 
+_JSON_CONTROL_ESCAPES = {'\n': '\\n', '\r': '\\r', '\t': '\\t'}
+
+def _repair_json_strings(text):
+    """Escape unescaped control characters inside JSON string values.
+
+    Gemini sometimes emits literal newlines/tabs inside quoted values, which
+    makes json.loads() raise 'Unterminated string'. This does a single pass
+    over the text, tracking whether we are inside a quoted string, and
+    replaces bare control characters with their JSON escape sequences.
+    Already-escaped sequences (e.g. \\n) are left untouched.
+    """
+    result = []
+    in_string = False
+    escape_next = False
+    for ch in text:
+        if escape_next:
+            result.append(ch)
+            escape_next = False
+        elif ch == '\\' and in_string:
+            result.append(ch)
+            escape_next = True
+        elif ch == '"':
+            in_string = not in_string
+            result.append(ch)
+        elif in_string and ch in _JSON_CONTROL_ESCAPES:
+            result.append(_JSON_CONTROL_ESCAPES[ch])
+        else:
+            result.append(ch)
+    return ''.join(result)
+
 def get_firestore_client():
     return firestore.Client(project=GCP_PROJECT)
 
@@ -257,27 +287,51 @@ Respond ONLY with valid JSON in this exact format:
 
     # Step 7 — Call Gemini
     gemini_result = {}
+    _raw_gemini_text = None
     try:
         model = GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(
             prompt,
             generation_config=GenerationConfig(max_output_tokens=4096)
         )
-        raw_text = response.text.strip()
-        logger.info(f"Gemini raw response (analyze): {raw_text!r}")
-        fence = re.search(r"```(?:json)?\s*\n([\s\S]*?)\n\s*```", raw_text)
+        _raw_gemini_text = response.text.strip()
+
+        # Extract JSON from markdown fence or bare text
+        json_text = _raw_gemini_text
+        fence = re.search(r"```(?:json)?\s*\n([\s\S]*?)\n\s*```", json_text)
         if fence:
-            raw_text = fence.group(1).strip()
+            json_text = fence.group(1).strip()
         else:
-            raw_text = re.sub(r"^```(?:json)?\s*\n?", "", raw_text)
-            raw_text = re.sub(r"\n?```\s*$", "", raw_text).strip()
-            # Final fallback: extract the first {...} JSON object from the text
-            json_match = re.search(r'\{[\s\S]*\}', raw_text)
+            json_text = re.sub(r"^```(?:json)?\s*\n?", "", json_text)
+            json_text = re.sub(r"\n?```\s*$", "", json_text).strip()
+            json_match = re.search(r'\{[\s\S]*\}', json_text)
             if json_match:
-                raw_text = json_match.group(0)
-        gemini_result = json.loads(raw_text)
+                json_text = json_match.group(0)
+
+        # Parse with two repair fallbacks
+        try:
+            gemini_result = json.loads(json_text)
+        except json.JSONDecodeError as parse_err:
+            # Log the FULL original response before any repair attempts
+            logger.error(
+                f"json.loads() failed for {cve_id} at "
+                f"line {parse_err.lineno} col {parse_err.colno} "
+                f"({parse_err.msg}).\nFull raw Gemini response:\n{_raw_gemini_text}"
+            )
+            # Fallback 1: raw_decode — handles valid JSON followed by trailing text
+            try:
+                gemini_result, _ = json.JSONDecoder().raw_decode(json_text)
+                logger.info(f"raw_decode() recovered JSON for {cve_id}")
+            except json.JSONDecodeError:
+                # Fallback 2: escape unescaped control chars inside string values
+                repaired = _repair_json_strings(json_text)
+                gemini_result = json.loads(repaired)
+                logger.info(f"String-repair recovered JSON for {cve_id}")
+
     except Exception as e:
         logger.exception(f"Gemini call failed for {cve_id}: {e}")
+        if _raw_gemini_text is not None:
+            logger.error(f"Full raw Gemini response at failure:\n{_raw_gemini_text}")
         gemini_result = {
             "overall_verdict": "ERROR",
             "vulnerable_config_line": None,
