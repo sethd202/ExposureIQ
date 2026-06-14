@@ -33,10 +33,7 @@
     gap: 10px;
   }
 
-  .wordmark {
-    display: flex;
-    flex-direction: column;
-  }
+  .wordmark { display: flex; flex-direction: column; }
 
   .wordmark-line1 {
     display: flex;
@@ -113,13 +110,28 @@
 
   .status-indicator.degraded { color: #e24b4a; }
 
-  /* ── Main content ── */
+  /* ── Main ── */
   main {
     flex: 1;
     padding: 28px;
-    max-width: 1100px;
+    max-width: 1200px;
     width: 100%;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── Two-column workspace ── */
+  .workspace {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .sidebar {
+    width: 320px;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -146,33 +158,29 @@
   .upload-zone {
     border: 1.5px dashed #1e2d3d;
     border-radius: 4px;
-    padding: 36px;
+    padding: 22px;
     text-align: center;
     cursor: pointer;
     transition: border-color 0.2s;
   }
 
-  .upload-zone:hover, .upload-zone.dragover {
-    border-color: #34d399;
-  }
+  .upload-zone:hover, .upload-zone.dragover { border-color: #34d399; }
 
-  .upload-zone input[type="file"] {
-    display: none;
-  }
+  .upload-zone input[type="file"] { display: none; }
 
   .upload-icon {
-    font-size: 28px;
+    font-size: 24px;
     color: #4a5568;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
 
   .upload-label {
-    font-size: 13px;
+    font-size: 12px;
     color: #7a8899;
   }
 
   .upload-sublabel {
-    font-size: 11px;
+    font-size: 10px;
     color: #4a5568;
     margin-top: 4px;
   }
@@ -182,10 +190,10 @@
     background: #060a0f;
     border: 0.5px solid #34d399;
     border-radius: 4px;
-    padding: 16px;
-    margin-top: 16px;
+    padding: 12px;
+    margin-top: 12px;
     font-family: 'Courier New', monospace;
-    font-size: 12px;
+    font-size: 11px;
     display: none;
   }
 
@@ -200,12 +208,12 @@
 
   .device-summary-row:last-child { border-bottom: none; }
 
-  .ds-key { color: #4a5568; width: 160px; flex-shrink: 0; }
-  .ds-val { color: #34d399; }
+  .ds-key { color: #4a5568; width: 100px; flex-shrink: 0; }
+  .ds-val { color: #34d399; word-break: break-all; }
 
   .upload-spinner {
     display: none;
-    margin-top: 12px;
+    margin-top: 10px;
     font-family: 'Courier New', monospace;
     font-size: 11px;
     color: #ef9f27;
@@ -213,11 +221,7 @@
 
   .upload-spinner.visible { display: block; }
 
-  /* ── CVE input section ── */
-  .cve-section {
-    margin-top: 20px;
-  }
-
+  /* ── Amber warning ── */
   .amber-warning {
     background: rgba(239, 159, 39, 0.08);
     border: 0.5px solid #ef9f27;
@@ -229,20 +233,22 @@
     margin-bottom: 12px;
   }
 
+  /* ── CVE input ── */
   .cve-input-row {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: stretch;
   }
 
   .cve-input {
     flex: 1;
+    min-width: 0;
     background: #060a0f;
     border: 0.5px solid #1e2d3d;
     border-radius: 4px;
-    padding: 10px 14px;
+    padding: 8px 10px;
     font-family: 'Courier New', monospace;
-    font-size: 13px;
+    font-size: 12px;
     color: #e8eaf0;
     outline: none;
     transition: border-color 0.2s;
@@ -255,10 +261,10 @@
     background: #064e3b;
     border: 0.5px solid #34d399;
     border-radius: 4px;
-    padding: 10px 20px;
+    padding: 8px 12px;
     color: #34d399;
     font-family: 'Courier New', monospace;
-    font-size: 12px;
+    font-size: 11px;
     cursor: pointer;
     letter-spacing: 0.04em;
     transition: background 0.2s;
@@ -268,14 +274,14 @@
   .analyze-btn:hover:not(:disabled) { background: #065f46; }
   .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* ── LLM processing panel ── */
+  /* ── LLM panel ── */
   .llm-panel {
     display: none;
     background: #060a0f;
     border: 0.5px solid #1e2d3d;
     border-radius: 4px;
-    padding: 14px 16px;
-    margin-top: 16px;
+    padding: 12px 14px;
+    margin-top: 12px;
     font-family: 'Courier New', monospace;
     font-size: 11px;
   }
@@ -309,74 +315,108 @@
     50% { opacity: 0.3; }
   }
 
-  /* ── Results table ── */
-  .results-table-wrap {
-    display: none;
-    margin-top: 16px;
-    overflow-x: auto;
+  /* ── CVE list (sidebar) ── */
+  .cve-list { margin-top: 12px; }
+
+  .cve-list-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    border-bottom: 0.5px solid #1e2d3d;
+    transition: background 0.15s;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
   }
 
-  .results-table-wrap.visible { display: block; }
+  .cve-list-row:last-child { border-bottom: none; }
+  .cve-list-row:hover { background: rgba(255,255,255,0.03); }
+  .cve-list-row.selected { background: rgba(52,211,153,0.06); }
+  .cve-list-row.row-affected { border-left-color: #e24b4a; }
+  .cve-list-row.row-not-affected { border-left-color: #34d399; }
 
-  .results-table {
-    width: 100%;
-    border-collapse: collapse;
+  .cve-row-id { color: #e8eaf0; }
+  .cve-row-verdict { font-size: 10px; font-weight: 700; }
+  .cve-row-verdict.verdict-affected { color: #e24b4a; }
+  .cve-row-verdict.verdict-not-affected { color: #34d399; }
+
+  /* ── Details panel ── */
+  .details-panel {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .details-empty {
     font-family: 'Courier New', monospace;
     font-size: 12px;
+    color: #2d3f52;
+    padding: 60px 0;
+    text-align: center;
   }
 
-  .results-table th {
-    text-align: left;
-    padding: 8px 12px;
-    color: #4a5568;
+  .det-cve-header {
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: #e8eaf0;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
     border-bottom: 0.5px solid #1e2d3d;
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
   }
 
-  .results-table td {
-    padding: 9px 12px;
-    border-bottom: 0.5px solid #1e2d3d;
-    color: #7a8899;
-  }
-
-  .results-table tr.affected {
-    border-left: 2px solid #e24b4a;
-  }
-
-  .results-table tr.not-affected {
-    border-left: 2px solid #34d399;
-  }
-
-  .verdict-affected    { color: #e24b4a; font-weight: 700; }
-  .verdict-not-affected { color: #34d399; font-weight: 700; }
-
-  /* ── Analysis output ── */
-  .analysis-output {
-    display: none;
-    background: #060a0f;
+  /* ── Stats row ── */
+  .stats-row {
+    display: flex;
     border: 0.5px solid #1e2d3d;
     border-radius: 4px;
-    padding: 16px;
-    margin-top: 16px;
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-    line-height: 1.75;
+    overflow: hidden;
+    margin-bottom: 16px;
   }
 
-  .analysis-output.visible { display: block; }
+  .stat-cell {
+    flex: 1;
+    padding: 10px 14px;
+    border-right: 0.5px solid #1e2d3d;
+  }
 
+  .stat-cell:last-child { border-right: none; }
+
+  .stat-label {
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+    color: #4a5568;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #e8eaf0;
+  }
+
+  .kev-yes { color: #e24b4a; }
+  .kev-no  { color: #4a5568; }
+
+  /* ── Analysis detail content ── */
   .analysis-verdict-line {
-    font-size: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
     font-weight: 700;
     margin-bottom: 10px;
   }
 
   .analysis-block {
-    padding: 8px 12px;
+    padding: 10px 14px;
     border-radius: 3px;
-    margin-top: 10px;
+    margin-top: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
   }
 
   .vuln-line-block {
@@ -396,10 +436,10 @@
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
 
-  /* ── Section 03 — Query panel ── */
+  /* ── Section 03 — Ask Gemini ── */
   #section-03 { display: none; }
   #section-03.visible { display: block; }
 
@@ -540,86 +580,115 @@
 <!-- ── Main ── -->
 <main>
 
-  <!-- Section 01 — Device Config Upload -->
-  <div class="panel">
-    <div class="section-label">01 — DEVICE CONFIG</div>
+  <div class="workspace">
 
-    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()"
-         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
-      <input type="file" id="fileInput" accept=".txt,.cfg,.conf" onchange="handleFileSelect(event)">
-      <div class="upload-icon">&#8682;</div>
-      <div class="upload-label">Click to upload or drag & drop a Cisco config file</div>
-      <div class="upload-sublabel">.txt · .cfg · .conf</div>
-    </div>
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
 
-    <div class="upload-spinner" id="uploadSpinner">&#9679; Uploading to GCS · waiting for Cloud Function...</div>
+      <!-- 01 — Device Config -->
+      <div class="panel">
+        <div class="section-label">01 — DEVICE CONFIG</div>
 
-    <div class="device-summary" id="deviceSummary">
-      <div class="device-summary-row"><span class="ds-key">Hostname</span><span class="ds-val" id="ds-hostname">—</span></div>
-      <div class="device-summary-row"><span class="ds-key">Platform</span><span class="ds-val" id="ds-platform">—</span></div>
-      <div class="device-summary-row"><span class="ds-key">IOS Version</span><span class="ds-val" id="ds-version">—</span></div>
-      <div class="device-summary-row"><span class="ds-key">Role</span><span class="ds-val" id="ds-role">—</span></div>
-      <div class="device-summary-row"><span class="ds-key">Services Detected</span><span class="ds-val" id="ds-services">—</span></div>
-      <div class="device-summary-row"><span class="ds-key">GCS Path</span><span class="ds-val" id="ds-gcs">—</span></div>
-      <div class="device-summary-row"><span class="ds-key">Cloud Function</span><span class="ds-val" id="ds-cf">—</span></div>
-      <div class="device-summary-row"><span class="ds-key">Firestore</span><span class="ds-val" id="ds-fs">—</span></div>
-    </div>
+        <div class="upload-zone" id="uploadZone"
+             onclick="document.getElementById('fileInput').click()"
+             ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+          <input type="file" id="fileInput" accept=".txt,.cfg,.conf" onchange="handleFileSelect(event)">
+          <div class="upload-icon">&#8682;</div>
+          <div class="upload-label">Click to upload or drag & drop a Cisco config file</div>
+          <div class="upload-sublabel">.txt · .cfg · .conf</div>
+        </div>
 
-    <!-- Section 02 — CVE Analysis (embedded inside Section 01 panel) -->
-    <div class="cve-section">
-      <div style="height:16px;"></div>
-      <div class="section-label">02 — CVE ANALYSIS</div>
+        <div class="upload-spinner" id="uploadSpinner">&#9679; Uploading to GCS · waiting for Cloud Function...</div>
 
-      <div class="amber-warning" id="uploadWarning">
-        &#9888; Upload a device config above before analyzing a CVE.
+        <div class="device-summary" id="deviceSummary">
+          <div class="device-summary-row"><span class="ds-key">Hostname</span><span class="ds-val" id="ds-hostname">—</span></div>
+          <div class="device-summary-row"><span class="ds-key">Platform</span><span class="ds-val" id="ds-platform">—</span></div>
+          <div class="device-summary-row"><span class="ds-key">IOS Version</span><span class="ds-val" id="ds-version">—</span></div>
+          <div class="device-summary-row"><span class="ds-key">Role</span><span class="ds-val" id="ds-role">—</span></div>
+          <div class="device-summary-row"><span class="ds-key">Services</span><span class="ds-val" id="ds-services">—</span></div>
+          <div class="device-summary-row"><span class="ds-key">GCS Path</span><span class="ds-val" id="ds-gcs">—</span></div>
+          <div class="device-summary-row"><span class="ds-key">Cloud Fn</span><span class="ds-val" id="ds-cf">—</span></div>
+          <div class="device-summary-row"><span class="ds-key">Firestore</span><span class="ds-val" id="ds-fs">—</span></div>
+        </div>
       </div>
 
-      <div class="cve-input-row">
-        <input type="text" class="cve-input" id="cveInput" placeholder="CVE-2023-20198"
-               disabled autocomplete="off" spellcheck="false">
-        <button class="analyze-btn" id="analyzeBtn" disabled type="button">ANALYZE &#8594;</button>
+      <!-- 02 — CVE Analysis -->
+      <div class="panel">
+        <div class="section-label">02 — CVE ANALYSIS</div>
+
+        <div class="amber-warning" id="uploadWarning">
+          &#9888; Upload a device config above before analyzing a CVE.
+        </div>
+
+        <div class="cve-input-row">
+          <input type="text" class="cve-input" id="cveInput" placeholder="CVE-2023-20198"
+                 disabled autocomplete="off" spellcheck="false">
+          <button class="analyze-btn" id="analyzeBtn" disabled type="button">ANALYZE &#8594;</button>
+        </div>
+
+        <div class="llm-panel" id="llmPanel">
+          <div class="llm-step" id="step-nvd"><span class="step-dot"></span>Fetching NVD CVE data...</div>
+          <div class="llm-step" id="step-kev"><span class="step-dot"></span>Checking CISA KEV catalog...</div>
+          <div class="llm-step" id="step-epss"><span class="step-dot"></span>Fetching EPSS score...</div>
+          <div class="llm-step" id="step-firestore"><span class="step-dot"></span>Reading Firestore device record...</div>
+          <div class="llm-step" id="step-gemini"><span class="step-dot"></span>Gemini analysis in progress...</div>
+          <div class="llm-step" id="step-save"><span class="step-dot"></span>Saving result to Firestore...</div>
+        </div>
+
+        <div class="cve-list" id="cveList"></div>
       </div>
 
-      <div class="llm-panel" id="llmPanel">
-        <div class="llm-step" id="step-nvd"><span class="step-dot"></span>Fetching NVD CVE data...</div>
-        <div class="llm-step" id="step-kev"><span class="step-dot"></span>Checking CISA KEV catalog...</div>
-        <div class="llm-step" id="step-epss"><span class="step-dot"></span>Fetching EPSS score...</div>
-        <div class="llm-step" id="step-firestore"><span class="step-dot"></span>Reading Firestore device record...</div>
-        <div class="llm-step" id="step-gemini"><span class="step-dot"></span>Gemini analysis in progress...</div>
-        <div class="llm-step" id="step-save"><span class="step-dot"></span>Saving result to Firestore...</div>
+    </aside>
+
+    <!-- ── Details panel ── -->
+    <div class="panel details-panel">
+      <div class="section-label">ANALYSIS DETAILS</div>
+
+      <div class="details-empty" id="detailsEmpty">
+        No CVE selected — enter a CVE ID and click ANALYZE &#8594;
       </div>
 
-      <div class="results-table-wrap" id="resultsTableWrap">
-        <table class="results-table">
-          <thead>
-            <tr>
-              <th>CVE ID</th>
-              <th>CVSS</th>
-              <th>EPSS</th>
-              <th>KEV</th>
-              <th>Verdict</th>
-            </tr>
-          </thead>
-          <tbody id="resultsTableBody"></tbody>
-        </table>
-      </div>
+      <div id="detailsContent" style="display:none;">
+        <div class="det-cve-header" id="detCveHeader"></div>
 
-      <div class="analysis-output" id="analysisOutput">
+        <div class="stats-row">
+          <div class="stat-cell">
+            <div class="stat-label">CVSS</div>
+            <div class="stat-value" id="detCvss">—</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">EPSS</div>
+            <div class="stat-value" id="detEpss">—</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">KEV</div>
+            <div class="stat-value" id="detKev">—</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-label">Severity</div>
+            <div class="stat-value" id="detSeverity">—</div>
+          </div>
+        </div>
+
         <div class="analysis-verdict-line" id="verdictLine"></div>
-        <div style="color:#7a8899; line-height:1.75; margin-bottom:8px;" id="reasonText"></div>
+
+        <div style="color:#7a8899; font-family:'Courier New',monospace; font-size:14px; line-height:1.75; margin-bottom:8px;" id="reasonText"></div>
+
         <div class="analysis-block vuln-line-block" id="vulnLineBlock" style="display:none;">
           <div class="analysis-label">Vulnerable Config Line</div>
           <div id="vulnLineText"></div>
         </div>
+
         <div class="analysis-block fix-block" id="fixBlock" style="display:none;">
           <div class="analysis-label">Remediation</div>
           <pre id="fixText" style="white-space:pre-wrap; margin:0;"></pre>
         </div>
       </div>
     </div>
+
   </div>
 
-  <!-- Section 03 — Ask Gemini -->
+  <!-- 03 — Ask Gemini (full width) -->
   <div class="panel" id="section-03">
     <div class="section-label">03 — ASK GEMINI</div>
 
@@ -652,7 +721,8 @@
 <script>
 // ── State ──
 let configUploaded = false;
-let analysisCount = 0;
+let cveHistory = {};
+let selectedCveId = null;
 
 // ── On load ──
 window.addEventListener('DOMContentLoaded', () => {
@@ -744,7 +814,6 @@ async function uploadFile(file) {
     document.getElementById('ds-fs').textContent = data.firestore_status || '—';
     summary.classList.add('visible');
 
-    // Enable CVE input
     configUploaded = true;
     document.getElementById('uploadWarning').style.display = 'none';
     document.getElementById('cveInput').disabled = false;
@@ -763,31 +832,22 @@ const STEPS = ['step-nvd', 'step-kev', 'step-epss', 'step-firestore', 'step-gemi
 const STEP_DELAYS = [0, 600, 1200, 1800, 2500, 6000];
 
 function resetSteps() {
-  STEPS.forEach(id => {
-    const el = document.getElementById(id);
-    el.className = 'llm-step';
-  });
+  STEPS.forEach(id => { document.getElementById(id).className = 'llm-step'; });
 }
 
 function animateSteps(resultPromise) {
   resetSteps();
   document.getElementById('llmPanel').classList.add('visible');
 
-  // Animate first 5 steps with delays
   STEPS.slice(0, 5).forEach((id, i) => {
     setTimeout(() => {
-      if (i > 0) {
-        document.getElementById(STEPS[i - 1]).className = 'llm-step done';
-      }
+      if (i > 0) document.getElementById(STEPS[i - 1]).className = 'llm-step done';
       document.getElementById(id).className = 'llm-step active';
     }, STEP_DELAYS[i]);
   });
 
-  // When result arrives, mark all done
   resultPromise.then(() => {
-    STEPS.slice(0, 5).forEach(id => {
-      document.getElementById(id).className = 'llm-step done';
-    });
+    STEPS.slice(0, 5).forEach(id => { document.getElementById(id).className = 'llm-step done'; });
     const saveEl = document.getElementById('step-save');
     saveEl.className = 'llm-step active';
     setTimeout(() => { saveEl.className = 'llm-step done'; }, 500);
@@ -802,7 +862,6 @@ async function runAnalysis() {
   if (!cveId) return;
 
   document.getElementById('analyzeBtn').disabled = true;
-  document.getElementById('analysisOutput').classList.remove('visible');
 
   try {
     const fetchPromise = fetch('/analyze', {
@@ -821,10 +880,8 @@ async function runAnalysis() {
       return;
     }
 
-    addResultRow(data);
-    document.getElementById('resultsTableWrap').classList.add('visible');
-    showAnalysisOutput(data);
-    analysisCount++;
+    addCveToSidebar(data);
+    selectCve(data.cve_id);
     document.getElementById('section-03').classList.add('visible');
 
   } catch (err) {
@@ -834,24 +891,51 @@ async function runAnalysis() {
   }
 }
 
-function addResultRow(data) {
-  const tbody = document.getElementById('resultsTableBody');
-  const tr = document.createElement('tr');
+// ── CVE sidebar list ──
+function addCveToSidebar(data) {
+  cveHistory[data.cve_id] = data;
+
+  const existing = document.querySelector(`.cve-list-row[data-cve="${CSS.escape(data.cve_id)}"]`);
+  if (existing) existing.remove();
+
   const isAffected = data.overall_verdict === 'AFFECTED';
-  tr.className = isAffected ? 'affected' : 'not-affected';
-  tr.innerHTML = `
-    <td>${escHtml(data.cve_id)}</td>
-    <td>${data.cvss ?? '—'}</td>
-    <td>${data.epss != null ? (data.epss * 100).toFixed(1) + '%' : '—'}</td>
-    <td>${data.kev ? '<span style="color:#e24b4a">YES</span>' : 'NO'}</td>
-    <td><span class="${isAffected ? 'verdict-affected' : 'verdict-not-affected'}">${escHtml(data.overall_verdict)}</span></td>
+  const row = document.createElement('div');
+  row.className = `cve-list-row ${isAffected ? 'row-affected' : 'row-not-affected'}`;
+  row.dataset.cve = data.cve_id;
+  row.innerHTML = `
+    <span class="cve-row-id">${escHtml(data.cve_id)}</span>
+    <span class="cve-row-verdict ${isAffected ? 'verdict-affected' : 'verdict-not-affected'}">${escHtml(data.overall_verdict)}</span>
   `;
-  tbody.appendChild(tr);
+  row.addEventListener('click', () => selectCve(data.cve_id));
+
+  const list = document.getElementById('cveList');
+  list.insertBefore(row, list.firstChild);
 }
 
-function showAnalysisOutput(data) {
-  const out = document.getElementById('analysisOutput');
+function selectCve(cveId) {
+  selectedCveId = cveId;
+  document.querySelectorAll('.cve-list-row').forEach(r => {
+    r.classList.toggle('selected', r.dataset.cve === cveId);
+  });
+  showDetailsPanel(cveHistory[cveId]);
+}
+
+// ── Details panel ──
+function showDetailsPanel(data) {
+  document.getElementById('detailsEmpty').style.display = 'none';
+  document.getElementById('detailsContent').style.display = 'block';
+
   const isAffected = data.overall_verdict === 'AFFECTED';
+
+  document.getElementById('detCveHeader').textContent = data.cve_id;
+  document.getElementById('detCvss').textContent = data.cvss != null ? String(data.cvss) : '—';
+  document.getElementById('detEpss').textContent = data.epss != null ? (data.epss * 100).toFixed(1) + '%' : '—';
+
+  const kevEl = document.getElementById('detKev');
+  kevEl.textContent = data.kev ? 'YES' : 'NO';
+  kevEl.className = 'stat-value ' + (data.kev ? 'kev-yes' : 'kev-no');
+
+  document.getElementById('detSeverity').textContent = data.severity || '—';
 
   const verdictEl = document.getElementById('verdictLine');
   verdictEl.textContent = data.overall_verdict;
@@ -874,11 +958,9 @@ function showAnalysisOutput(data) {
   } else {
     fixBlock.style.display = 'none';
   }
-
-  out.classList.add('visible');
 }
 
-// ── Query ──
+// ── Ask Gemini ──
 function sendPreset(preset) {
   document.getElementById('queryInput').value = preset;
   sendQuery();
