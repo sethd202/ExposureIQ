@@ -183,7 +183,7 @@ def analyze():
     epss_percentile = None
     try:
         epss_resp = requests.get(
-            f"https://api.first.org/data/1.0/epss?cve={cve_id}",
+            f"https://api.first.org/data/v1/epss?cve={cve_id}",
             timeout=10
         )
         logger.info(f"EPSS response for {cve_id}: HTTP {epss_resp.status_code}")
