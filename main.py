@@ -128,8 +128,8 @@ def analyze():
 
     # Step 2 — Fetch NVD data
     nvd_description = "No description available"
-    cvss_score = 0.0
-    cvss_severity = "Unknown"
+    cvss_score = None
+    cvss_severity = None
     nvd_affected_products = "Not specified"
     try:
         nvd_resp = requests.get(
@@ -150,11 +150,26 @@ def analyze():
                     break
             metrics = cve_item.get("metrics", {})
             for key in ["cvssMetricV31", "cvssMetricV30", "cvssMetricV2"]:
-                if key in metrics and metrics[key]:
-                    m = metrics[key][0].get("cvssData", {})
-                    cvss_score = m.get("baseScore", 0.0)
-                    cvss_severity = m.get("baseSeverity", "Unknown")
+                if key not in metrics or not metrics[key]:
+                    continue
+                entries = metrics[key]
+                # Prefer Primary source (NVD analyst) over Secondary (CNA/vendor)
+                entry = next((e for e in entries if e.get("type") == "Primary"), entries[0])
+                m = entry.get("cvssData", {})
+                score = m.get("baseScore")
+                if score is not None:
+                    cvss_score = float(score)
+                    cvss_severity = m.get("baseSeverity") or "Unknown"
+                    logger.info(
+                        f"CVSS for {cve_id}: {cvss_score} ({cvss_severity}) "
+                        f"from {key}, type={entry.get('type', 'unknown')}"
+                    )
                     break
+            if not cvss_score:
+                logger.warning(
+                    f"CVSS score missing or zero for {cve_id}. "
+                    f"Raw metrics: {json.dumps(metrics)}"
+                )
             configs = cve_item.get("configurations", [])
             products = []
             for config in configs:
@@ -216,11 +231,12 @@ def analyze():
     # Step 6 — Build Gemini prompt
     kev_field = f"YES — {kev_reason}" if kev_listed else "NO"
     epss_field = f"{epss_score:.4f} ({epss_percentile:.4f} percentile)" if epss_score is not None else "N/A"
+    cvss_field = f"{cvss_score} ({cvss_severity})" if cvss_score is not None else "N/A"
     prompt = f"""You are a cybersecurity analyst. Analyze the following CVE against the provided Cisco router configuration.
 
 CVE ID: {cve_id}
 Description: {nvd_description}
-CVSS Score: {cvss_score} ({cvss_severity})
+CVSS Score: {cvss_field}
 Affected Products: {nvd_affected_products}
 CISA KEV Listed: {kev_field}
 EPSS Score: {epss_field}
