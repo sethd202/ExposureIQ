@@ -136,8 +136,10 @@ def analyze():
             f"https://services.nvd.nist.gov/rest/json/cves/2.0?cveId={cve_id}",
             timeout=10
         )
+        logger.info(f"NVD response for {cve_id}: HTTP {nvd_resp.status_code}")
         nvd_resp.raise_for_status()
         nvd_data = nvd_resp.json()
+        logger.info(f"NVD data for {cve_id}: {json.dumps(nvd_data)[:800]}")
         vulns = nvd_data.get("vulnerabilities", [])
         if vulns:
             cve_item = vulns[0].get("cve", {})
@@ -177,20 +179,24 @@ def analyze():
         logger.warning(f"KEV check failed: {e}")
 
     # Step 4 — Fetch EPSS
-    epss_score = 0.0
-    epss_percentile = 0.0
+    epss_score = None
+    epss_percentile = None
     try:
         epss_resp = requests.get(
             f"https://api.first.org/data/1.0/epss?cve={cve_id}",
             timeout=10
         )
-        epss_resp.raise_for_status()
-        epss_data = epss_resp.json().get("data", [])
-        if epss_data:
-            epss_score = float(epss_data[0].get("epss", 0.0))
-            epss_percentile = float(epss_data[0].get("percentile", 0.0))
+        logger.info(f"EPSS response for {cve_id}: HTTP {epss_resp.status_code}")
+        if epss_resp.status_code == 404:
+            logger.warning(f"EPSS API returned 404 for {cve_id} — endpoint may require authentication")
+        else:
+            epss_resp.raise_for_status()
+            epss_data = epss_resp.json().get("data", [])
+            if epss_data:
+                epss_score = float(epss_data[0].get("epss", 0.0))
+                epss_percentile = float(epss_data[0].get("percentile", 0.0))
     except Exception as e:
-        logger.warning(f"EPSS fetch failed: {e}")
+        logger.warning(f"EPSS fetch failed for {cve_id}: {e}")
 
     # Step 5 — Read Firestore device record
     db = get_firestore_client()
@@ -209,6 +215,7 @@ def analyze():
 
     # Step 6 — Build Gemini prompt
     kev_field = f"YES — {kev_reason}" if kev_listed else "NO"
+    epss_field = f"{epss_score:.4f} ({epss_percentile:.4f} percentile)" if epss_score is not None else "N/A"
     prompt = f"""You are a cybersecurity analyst. Analyze the following CVE against the provided Cisco router configuration.
 
 CVE ID: {cve_id}
@@ -216,7 +223,7 @@ Description: {nvd_description}
 CVSS Score: {cvss_score} ({cvss_severity})
 Affected Products: {nvd_affected_products}
 CISA KEV Listed: {kev_field}
-EPSS Score: {epss_score} ({epss_percentile} percentile)
+EPSS Score: {epss_field}
 
 DEVICE CONFIGURATION:
 {full_config_text}
@@ -248,9 +255,13 @@ Respond ONLY with valid JSON in this exact format:
         else:
             raw_text = re.sub(r"^```(?:json)?\s*\n?", "", raw_text)
             raw_text = re.sub(r"\n?```\s*$", "", raw_text).strip()
+            # Final fallback: extract the first {...} JSON object from the text
+            json_match = re.search(r'\{[\s\S]*\}', raw_text)
+            if json_match:
+                raw_text = json_match.group(0)
         gemini_result = json.loads(raw_text)
     except Exception as e:
-        logger.error(f"Gemini call failed: {e}")
+        logger.exception(f"Gemini call failed for {cve_id}: {e}")
         gemini_result = {
             "overall_verdict": "ERROR",
             "vulnerable_config_line": None,
